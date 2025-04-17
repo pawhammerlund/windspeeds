@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wind Speed Converter</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: linear-gradient(to right, #e0f7fa, #ffffff);
+    }
+    .container {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    form {
+      flex: 1 1 300px;
+      min-width: 280px;
+    }
+    input[type="text"], button, input[type="range"] {
+      width: 100%;
+      padding: 6px;
+      margin: 6px 0;
+      font-size: 1em;
+    }
+    input::placeholder {
+      color: #888;
+    }
+    button {
+      background-color: #eee;
+      border: 1px solid #aaa;
+      border-radius: 5px;
+    }
+    .label {
+      font-weight: bold;
+    }
+    .legend {
+      flex: 1 1 300px;
+      min-width: 280px;
+      
+      font-size: 0.85em;
+      padding-right: 10px;
+    }
+    .legend h3 {
+      margin-bottom: 10px;
+    }
+    .legend div {
+      padding: 1px;
+      margin: 0.5px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 2px;
+      
+      cursor: pointer;
+      flex-direction: column;
+    }
+    .legend div.active {
+      background-color: #d1f7d1;
+      font-weight: bold;
+    }
+    .legend .note {
+      font-size: 0.7em;
+      color: #555;
+    }
+    .legend .row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form onsubmit="calculateFromForm(); return false;">
+      <h2>Wind Speed Converter</h2>
+
+      <label class="label" for="slider">Set Wind Speed (knots):</label>
+      <input type="range" id="slider" min="0" max="80" step="0.1" oninput="sliderInput(this.value)">
+
+      <label class="label" for="knots">Knots (kt):</label>
+      <input type="text" id="knots" placeholder="e.g. 10.1 kt">
+
+      <label class="label" for="mps">Meters per second (m/s):</label>
+      <input type="text" id="mps" placeholder="e.g. 5.2 m/s">
+
+      <label class="label" for="kmh">Kilometers per hour (km/h):</label>
+      <input type="text" id="kmh" placeholder="e.g. 18.7 km/h">
+
+      <label class="label" for="mph">Miles per hour (mph):</label>
+      <input type="text" id="mph" placeholder="e.g. 11.5 mph">
+
+      <button type="submit">Convert</button>
+      <button type="button" onclick="resetAll()">Reset</button>
+    </form>
+
+    <div class="legend">
+      <h3>Beaufort Scale Legend</h3>
+      <div id="bft0" class="row" onclick="beaufortClicked(0)"><div>0 – Calm (0–1 kt)</div><div class="note">Sea like a mirror. Great for docking or fishing.</div></div>
+      <div id="bft1" class="row" onclick="beaufortClicked(1)"><div>1 – Light Air (1–3 kt)</div><div class="note">Barely noticeable wind, slow sailing.</div></div>
+      <div id="bft2" class="row" onclick="beaufortClicked(2)"><div>2 – Light Breeze (4–6 kt)</div><div class="note">Good for light cruising, beginner friendly.</div></div>
+      <div id="bft3" class="row" onclick="beaufortClicked(3)"><div>3 – Gentle Breeze (7–10 kt)</div><div class="note">Pleasant sailing, ideal for learning trim.</div></div>
+      <div id="bft4" class="row" onclick="beaufortClicked(4)"><div>4 – Moderate Breeze (11–16 kt)</div><div class="note">Ideal for racing or fast cruising.</div></div>
+      <div id="bft5" class="row" onclick="beaufortClicked(5)"><div>5 – Fresh Breeze (17–21 kt)</div><div class="note">Reefing may be required, thrilling sailing.</div></div>
+      <div id="bft6" class="row" onclick="beaufortClicked(6)"><div>6 – Strong Breeze (22–27 kt)</div><div class="note">Reefed sails and cautious handling needed.</div></div>
+      <div id="bft7" class="row" onclick="beaufortClicked(7)"><div>7 – Near Gale (28–33 kt)</div><div class="note">Challenging sailing, for experienced crews.</div></div>
+      <div id="bft8" class="row" onclick="beaufortClicked(8)"><div>8 – Gale (34–40 kt)</div><div class="note">Serious storm conditions. Seek shelter.</div></div>
+      <div id="bft9" class="row" onclick="beaufortClicked(9)"><div>9 – Strong Gale (41–47 kt)</div><div class="note">Dangerous conditions. Harbor advised.</div></div>
+      <div id="bft10" class="row" onclick="beaufortClicked(10)"><div>10 – Storm (48–55 kt)</div><div class="note">Very high risk. Only trained crews offshore.</div></div>
+      <div id="bft11" class="row" onclick="beaufortClicked(11)"><div>11 – Violent Storm (56–63 kt)</div><div class="note">Extreme danger. Avoid sailing.</div></div>
+      <div id="bft12" class="row" onclick="beaufortClicked(12)"><div>12 – Hurricane (64+ kt)</div><div class="note">Catastrophic. Evacuate or take shelter.</div></div>
+    </div>
+  </div>
+
+  <script>
+    function calculateFromForm() {
+      const mpsEl = document.getElementById('mps');
+      const kmhEl = document.getElementById('kmh');
+      const mphEl = document.getElementById('mph');
+      const knotsEl = document.getElementById('knots');
+      const slider = document.getElementById('slider');
+
+      let mps = parseFloat(mpsEl.value) ||
+                (parseFloat(kmhEl.value) / 3.6) ||
+                (parseFloat(mphEl.value) * 0.44704) ||
+                (parseFloat(knotsEl.value) * 0.514444);
+
+      if (!isNaN(mps)) {
+        const knots = mps / 0.514444;
+        mpsEl.value = mps.toFixed(2);
+        kmhEl.value = (mps * 3.6).toFixed(2);
+        mphEl.value = (mps / 0.44704).toFixed(2);
+        knotsEl.value = knots.toFixed(2);
+        slider.value = knots;
+        highlightBeaufort(mpsToBeaufort(mps));
+      }
+    }
+
+    function sliderInput(val) {
+      const mps = parseFloat(val) * 0.514444;
+      document.getElementById('mps').value = mps.toFixed(2);
+      calculateFromForm();
+    }
+
+    function resetAll() {
+      document.getElementById('mps').value = '';
+      document.getElementById('kmh').value = '';
+      document.getElementById('mph').value = '';
+      document.getElementById('knots').value = '';
+      document.getElementById('slider').value = 0;
+      highlightBeaufort(null);
+    }
+
+    function mpsToBeaufort(mps) {
+      const scale = [
+        0.3, 1.5, 3.3, 5.5, 7.9, 10.7,
+        13.8, 17.1, 20.7, 24.4, 28.4,
+        32.6
+      ];
+      for (let i = 0; i < scale.length; i++) {
+        if (mps < scale[i]) return i;
+      }
+      return 12;
+    }
+
+    function highlightBeaufort(index) {
+      for (let i = 0; i <= 12; i++) {
+        const el = document.getElementById('bft' + i);
+        el.classList.remove('active');
+      }
+      if (index !== null) {
+        const activeEl = document.getElementById('bft' + index);
+        if (activeEl) activeEl.classList.add('active');
+      }
+    }
+
+    function beaufortClicked(index) {
+      const scale = [
+        0.0, 0.3, 1.5, 3.3, 5.5, 7.9,
+        10.7, 13.8, 17.1, 20.7, 24.4,
+        28.4, 32.6
+      ];
+      const avgMps = index < 12
+        ? (scale[index] + scale[index + 1]) / 2
+        : 33.0;
+      const knots = avgMps / 0.514444;
+      document.getElementById('slider').value = knots;
+      document.getElementById('mps').value = avgMps.toFixed(2);
+      calculateFromForm();
+    }
+  </script>
+</body>
+</html>
